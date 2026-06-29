@@ -1,9 +1,10 @@
-name: Build Release
+name: Build
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
@@ -37,26 +38,9 @@ jobs:
         working-directory: ${{ matrix.dir }}
         run: chmod +x gradlew && ./gradlew build --no-daemon --stacktrace
 
-      - name: Upload jars
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.name }}-jar
           path: ${{ matrix.dir }}/build/libs/*.jar
           if-no-files-found: error
-
-  release:
-    needs: build
-    runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
-    steps:
-      - name: Download all jars
-        uses: actions/download-artifact@v4
-        with:
-          path: artifacts
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: artifacts/**/*.jar
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
