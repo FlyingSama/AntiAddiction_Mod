@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "antiaddiction",
+  "version": "${version}",
+  "name": "防沉迷系统",
+  "description": "未成年人防沉迷实名认证与游戏时间管理系统",
+  "authors": ["AntiAddiction Team"],
+  "license": "MIT",
+  "icon": "assets/antiaddiction/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "main": ["com.antiaddiction.AntiAddictionMod"],
+    "client": ["com.antiaddiction.AntiAddictionClient"]
+  },
+  "mixins": ["antiaddiction.mixins.json"],
+  "depends": {
+    "fabricloader": ">=0.19.2",
+    "fabric-api": ">=0.141.3",
+    "minecraft": ">=1.21.11"
+  }
+}

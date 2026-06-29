@@ -1,0 +1,26 @@
+{
+  "name": "antiaddiction-backend",
+  "version": "1.0.0",
+  "description": "防沉迷系统后台管理服务",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test:security": "node security.test.js",
+    "test:rules": "node rules.test.js",
+    "test:play-sessions": "node play_sessions.test.js",
+    "test": "npm run test:security && npm run test:rules && npm run test:play-sessions"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "better-sqlite3": "^12.10.0",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "express-session": "^1.17.3",
+    "iconv-lite": "^0.7.2",
+    "morgan": "^1.10.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

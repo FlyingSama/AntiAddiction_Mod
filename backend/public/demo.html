@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<link rel="icon" type="image/png" sizes="256x256" href="favicon.png">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>防沉迷系统 · 演示面板</title>
+<style>
+  :root {
+    --bg:        #0f172a;
+    --surface:   #1e293b;
+    --surface2:  #273549;
+    --border:    #334155;
+    --accent:    #3b82f6;
+    --accent2:   #60a5fa;
+    --danger:    #ef4444;
+    --success:   #22c55e;
+    --warning:   #f59e0b;
+    --text:      #e2e8f0;
+    --muted:     #94a3b8;
+    --radius:    8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+
+  /* ── 演示顶栏 ── */
+  .demo-bar {
+    background: linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%);
+    border-bottom: 1px solid var(--border);
+    padding: .35rem 1.5rem; display: flex; align-items: center; justify-content: space-between;
+  }
+  .demo-badge {
+    background: var(--warning); color: #000; font-weight: 700; font-size: .72rem;
+    padding: .2rem .6rem; border-radius: 20px; letter-spacing: .05em;
+  }
+
+  /* ── 主布局 ── */
+  #app { display: block; }
+  .layout { display: flex; min-height: calc(100vh - 36px); }
+  .sidebar {
+    width: 220px; background: var(--surface); border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; flex-shrink: 0;
+  }
+  .nav-icon { width: 1.25rem; height: 1.25rem; flex-shrink: 0; color: inherit; }
+  .title-icon { width: 1.3rem; height: 1.3rem; flex-shrink: 0; vertical-align: -.15rem; }
+  .btn-icon { width: 1rem; height: 1rem; flex-shrink: 0; vertical-align: -.15rem; }
+  .sidebar-logo {
+    padding: 1.2rem 1rem; border-bottom: 1px solid var(--border);
+    font-weight: 700; font-size: 1.1rem; color: var(--accent2);
+    display: flex; align-items: center; gap: .5rem;
+  }
+  .sidebar-logo .nav-icon { width: 1.4rem; height: 1.4rem; }
+  .nav-item {
+    padding: .8rem 1rem; cursor: pointer; color: var(--muted);
+    font-size: .95rem; transition: all .15s; border-left: 3px solid transparent;
+    display: flex; align-items: center; gap: .65rem;
+  }
+  .nav-item .nav-icon { width: 1.25rem; height: 1.25rem; flex-shrink: 0; }
+  .nav-item.active .nav-icon { color: var(--accent2); }
+  .nav-item:hover   { background: var(--surface2); color: var(--text); }
+  .nav-item.active  { border-left-color: var(--accent); color: var(--accent2); background: var(--surface2); }
+  .sidebar-footer { margin-top: auto; padding: 1rem; border-top: 1px solid var(--border); }
+  .main { flex: 1; overflow-y: auto; padding: 1.5rem; }
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* ── 通用组件 ── */
+  .page-title { font-size: 1.3rem; font-weight: 600; margin-bottom: 1.2rem; color: var(--text); }
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1.2rem; margin-bottom: 1rem;
+  }
+  .card-title { font-size: .9rem; font-weight: 600; color: var(--muted); margin-bottom: .8rem; text-transform: uppercase; letter-spacing: .05em; }
+
+  label  { display: block; font-size: .82rem; color: var(--muted); margin-bottom: .3rem; }
+  input, select {
+    width: 100%; padding: .5rem .7rem; border-radius: 6px;
+    border: 1px solid var(--border); background: var(--bg); color: var(--text);
+    font-size: .9rem; outline: none; transition: border-color .15s;
+  }
+  input:focus, select:focus { border-color: var(--accent); }
+  .form-row { display: flex; gap: .7rem; flex-wrap: wrap; align-items: flex-end; }
+  .form-group { flex: 1; min-width: 130px; }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: .4rem;
+    padding: .45rem .9rem; border-radius: 6px; border: none; cursor: pointer;
+    font-size: .85rem; font-weight: 500; transition: all .15s; white-space: nowrap;
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover  { background: var(--accent2); }
+  .btn-danger  { background: var(--danger); color: #fff; }
+  .btn-danger:hover   { opacity: .85; }
+  .btn-ghost   { background: var(--surface2); color: var(--text); }
+  .btn-ghost:hover    { background: var(--border); }
+  .btn-sm { padding: .25rem .6rem; font-size: .8rem; }
+
+  table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+  th, td { padding: .55rem .7rem; text-align: left; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-weight: 600; font-size: .8rem; text-transform: uppercase; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface2); }
+
+  .badge {
+    display: inline-block; padding: .15rem .5rem; border-radius: 999px;
+    font-size: .75rem; font-weight: 600;
+  }
+  .badge-green  { background: #14532d; color: #4ade80; }
+  .badge-red    { background: #450a0a; color: #f87171; }
+  .badge-gray   { background: #1e293b; color: #94a3b8; }
+  .badge-yellow { background: #451a03; color: #fbbf24; }
+
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: .8rem; margin-bottom: 1rem; }
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1rem;
+  }
+  .stat-value { font-size: 1.8rem; font-weight: 700; color: var(--accent2); }
+  .stat-label { font-size: .8rem; color: var(--muted); margin-top: .2rem; }
+
+  .alert {
+    padding: .6rem .9rem; border-radius: 6px; margin-bottom: .8rem;
+    font-size: .85rem; display: none;
+  }
+  .alert-danger  { background: #450a0a; color: #fca5a5; border: 1px solid #7f1d1d; }
+  .alert-success { background: #052e16; color: #86efac; border: 1px solid #14532d; }
+  .alert.show { display: block; }
+
+  .pagination { display: flex; gap: .4rem; margin-top: .8rem; }
+  .page-btn {
+    padding: .3rem .65rem; border-radius: 5px; border: 1px solid var(--border);
+    background: var(--surface); color: var(--text); cursor: pointer; font-size: .82rem;
+  }
+  .page-btn.active { background: var(--accent); border-color: var(--accent); }
+  .page-btn:hover:not(.active) { background: var(--surface2); }
+
+  .empty { text-align: center; color: var(--muted); padding: 2rem; font-size: .9rem; }
+
+  /* ── 日历组件 ── */
+  .calendar-wrap {
+    width: 100%; background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: clamp(.5rem, 2vw, 1rem);
+    box-shadow: 0 4px 24px rgba(0,0,0,.3);
+  }
+  #gamedayCalendar .calendar-wrap { max-width: none; }
+  #dashboardCalendar .calendar-wrap {
+    background: transparent; border: none; padding: 0; box-shadow: none;
+    max-width: none;
+  }
+  #dashboardCalendar .cal-day { aspect-ratio: 1; min-height: 0; }
+  .dashboard-row { display: grid; grid-template-columns: auto 1fr; gap: 1.5rem; align-items: start; }
+  @media (max-width: 860px) { .dashboard-row { grid-template-columns: 1fr; } }
+  .gameday-layout { display: grid; grid-template-columns: 1fr 280px; gap: 1rem; align-items: start; }
+  @media (max-width: 900px) { .gameday-layout { grid-template-columns: 1fr; } }
+  .gameday-layout > :last-child { min-width: 260px; }
+  .cal-header {
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: .6rem; gap: .35rem; flex-wrap: wrap;
+  }
+  .cal-title { font-weight: 700; font-size: clamp(.9rem, 2vw, 1.1rem); white-space: nowrap; }
+  .cal-nav {
+    background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+    border-radius: 6px; padding: .35rem .75rem; cursor: pointer;
+    font-size: .85rem; font-weight: 600; min-width: 34px;
+    transition: background .15s, transform .1s;
+  }
+  .cal-nav:hover { background: var(--accent); border-color: var(--accent); transform: scale(1.05); }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; text-align: center; }
+  .cal-day-header { color: var(--muted); font-size: .7rem; padding: .25rem 0; font-weight: 600; text-transform: uppercase; letter-spacing: .02em; }
+  .cal-day {
+    aspect-ratio: 1; padding: 2px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; border-radius: 6px;
+    font-size: clamp(.72rem, 1.5vw, .85rem); cursor: pointer;
+    transition: background .15s, transform .1s;
+  }
+  .cal-day:hover { background: var(--surface2); transform: scale(1.08); z-index: 1; }
+  .cal-day.empty { cursor: default; }
+  .cal-day.empty:hover { background: transparent; transform: none; }
+  .cal-day.today { box-shadow: inset 0 0 0 2px var(--accent); }
+  .cal-day.selected { background: var(--accent); color: #fff; }
+  .cal-dot { width: 5px; height: 5px; border-radius: 50%; margin-top: 1px; }
+  .cal-dot.green { background: #22c55e; box-shadow: 0 0 4px rgba(34,197,94,.4); }
+  .cal-dot.red   { background: #ef4444; box-shadow: 0 0 4px rgba(239,68,68,.4); }
+  .cal-dot-sm { display: inline-block; width: 8px; height: 8px; border-radius: 50%; vertical-align: middle; position: relative; top: -1px; }
+  .cal-dot-sm.green { background: #22c55e; }
+  .cal-dot-sm.red   { background: #ef4444; }
+  #dashboardCalendar .cal-day { cursor: default; aspect-ratio: auto; min-height: 28px; border-radius: 5px; }
+  #dashboardCalendar .cal-day:hover { background: transparent; transform: none; }
+
+  /* ── 响应式 ── */
+  @media (max-width: 680px) {
+    .sidebar { width: 54px; }
+    .sidebar .nav-label, .sidebar-logo span, .sidebar-footer span { display: none; }
+    .sidebar-logo { justify-content: center; }
+    .nav-item { justify-content: center; }
+    .main { padding: 1rem .7rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- 演示顶栏 -->
+<div class="demo-bar">
+  <span style="color:var(--accent2);font-weight:700;font-size:.88rem">
+    <svg style="width:1rem;height:1rem;vertical-align:-.12rem;margin-right:.3rem" viewBox="0 0 24 24"><path fill="currentColor" d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>防沉迷管理后台 · Demo
+  </span>
+  <span class="demo-badge">演 示</span>
+</div>
+
+<div id="app">
+  <div class="layout">
+    <div class="sidebar">
+      <div class="sidebar-logo"><svg class="nav-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg> <span>防沉迷后台</span></div>
+      <nav>
+        <div class="nav-item active" onclick="showPage('dashboard')" data-page="dashboard"><svg class="nav-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg> <span class="nav-label">仪表盘</span></div>
+        <div class="nav-item" onclick="showPage('gamedays')"  data-page="gamedays" ><svg class="nav-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zM9 14H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2z"/></svg> <span class="nav-label">游戏日管理</span></div>
+        <div class="nav-item" onclick="showPage('users')"     data-page="users"    ><svg class="nav-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg> <span class="nav-label">用户管理</span></div>
+        <div class="nav-item" onclick="showPage('logs')"      data-page="logs"     ><svg class="nav-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"/></svg> <span class="nav-label">登录日志</span></div>
+        <div class="nav-item" onclick="showPage('config')"    data-page="config"   ><svg class="nav-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.49.49 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94L14.4 2.81a.484.484 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 00-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.63-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg> <span class="nav-label">接入配置</span></div>
+      </nav>
+      <div class="sidebar-footer">
+        <span style="color:var(--muted);font-size:.75rem">演示数据 · 仅供展示</span>
+      </div>
+    </div>
+
+    <div class="main">
+
+      <!-- ── 仪表盘 ── -->
+      <div class="page active" id="page-dashboard">
+        <div class="page-title"><svg class="title-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg> 仪表盘</div>
+        <div class="stat-grid" id="statGrid"></div>
+        <div class="card">
+          <div class="card-title">最近10条登录日志</div>
+          <table>
+            <thead><tr><th>时间</th><th>用户名</th><th>类型</th><th>操作</th><th>IP</th><th>位置</th></tr></thead>
+            <tbody id="recentLogs"></tbody>
+          </table>
+        </div>
+        <div class="dashboard-row">
+          <div class="card">
+            <div class="card-title">本月游戏日日历</div>
+            <div id="dashboardCalendar"></div>
+          </div>
+          <div class="card" style="min-width:280px">
+            <div class="card-title">Mod 客户端接入配置</div>
+            <p style="font-size:.87rem;color:var(--muted);line-height:1.6">
+              在 Minecraft 客户端目录下创建
+              <code style="background:var(--bg);padding:.1rem .4rem;border-radius:4px">.minecraft/config/antiaddiction.properties</code>，
+              填入以下内容后保存，重启游戏生效：
+            </p>
+            <div style="display:flex;gap:.4rem;margin-top:.7rem;align-items:stretch">
+              <pre id="modConfigText" style="flex:1;background:var(--bg);padding:.7rem;border-radius:6px;font-size:.85rem;color:#93c5fd;border:1px solid var(--border);margin:0;white-space:nowrap;overflow-x:auto">backend_url=http://authmc.fy1ng.cn:3000</pre>
+              <button class="btn btn-ghost btn-sm" onclick="copyConfig()" title="复制配置" style="flex-shrink:0;padding:.4rem .7rem"><svg class="btn-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg></button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── 游戏日管理 ── -->
+      <div class="page" id="page-gamedays">
+        <div class="page-title"><svg class="title-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zM9 14H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2z"/></svg> 游戏日管理</div>
+        <div class="card" style="max-width:500px">
+          <div class="card-title">批量设置可游玩时间段</div>
+          <div id="batchAlert" class="alert"></div>
+          <div class="form-row">
+            <div class="form-group" style="max-width:110px">
+              <label>开始时间</label>
+              <input id="batchStart" type="text" placeholder="HH:MM" maxlength="5" value="20:00" oninput="formatTimeInput(event)" onblur="blurTimeInput(event)" style="width:80px;text-align:center" autocomplete="off">
+            </div>
+            <div class="form-group" style="max-width:110px">
+              <label>结束时间</label>
+              <input id="batchEnd" type="text" placeholder="HH:MM" maxlength="5" value="21:00" oninput="formatTimeInput(event)" onblur="blurTimeInput(event)" style="width:80px;text-align:center" autocomplete="off">
+            </div>
+            <button class="btn btn-primary" onclick="batchSetTime()" style="margin-top:1.5rem">应用到全部日期</button>
+          </div>
+          <span style="color:var(--muted);font-size:.8rem;margin-top:.4rem;display:block">
+            <span class="cal-dot-sm green"></span>=可玩日
+            <span class="cal-dot-sm red" style="margin-left:.5rem"></span>=调休非玩日
+          </span>
+        </div>
+        <div class="card" style="width:fit-content;max-width:100%">
+          <div id="gamedayHint" style="color:var(--muted);font-size:.85rem;padding:0 0 .6rem 0;text-align:left">↓ 点击日历中的日期进行编辑</div>
+          <div class="gameday-layout">
+            <div id="gamedayCalendar"></div>
+            <div id="gamedayEdit"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── 用户管理 ── -->
+      <div class="page" id="page-users">
+        <div class="page-title"><svg class="title-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg> 实名认证用户管理</div>
+        <div class="card">
+          <div class="card-title">新增用户 (演示)</div>
+          <div id="userAlert" class="alert"></div>
+          <div class="form-row">
+            <div class="form-group"><label>姓名</label><input id="uName" type="text" placeholder="真实姓名"></div>
+            <div class="form-group"><label>身份证号（18位）</label><input id="uIdCard" type="text" placeholder="18位身份证号码" maxlength="18"></div>
+            <button class="btn btn-primary" onclick="addUser()" style="margin-top:1.5rem;">＋ 新增用户</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">用户列表</div>
+          <table><thead><tr><th>ID</th><th>姓名</th><th>身份证号</th><th>年龄</th><th>类型</th><th>创建时间</th><th>操作</th></tr></thead>
+          <tbody id="userList"></tbody></table>
+        </div>
+      </div>
+
+      <!-- ── 日志 ── -->
+      <div class="page" id="page-logs">
+        <div class="page-title"><svg class="title-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"/></svg> 登录日志</div>
+        <div class="card">
+          <div style="overflow-x:auto">
+            <table>
+              <thead><tr><th>时间</th><th>用户名</th><th>类型</th><th>操作</th><th>IP</th><th>位置</th></tr></thead>
+              <tbody id="logList"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── 接入配置 ── -->
+      <div class="page" id="page-config">
+        <div class="page-title"><svg class="title-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.49.49 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94L14.4 2.81a.484.484 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 00-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.63-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg> Mod 接入配置</div>
+        <div class="card">
+          <div class="card-title">antiaddiction.properties</div>
+          <div style="display:flex;gap:.4rem;align-items:stretch">
+            <pre style="flex:1;background:var(--bg);padding:.7rem;border-radius:6px;font-size:.85rem;color:#93c5fd;border:1px solid var(--border);margin:0;white-space:nowrap;overflow-x:auto">backend_url=http://authmc.fy1ng.cn:3000</pre>
+            <button class="btn btn-ghost btn-sm" onclick="copyFullConfig()" title="复制配置" style="flex-shrink:0;padding:.4rem .7rem"><svg class="btn-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg></button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">API 端点参考</div>
+          <table style="font-size:.82rem">
+            <thead><tr><th>端点</th><th>说明</th></tr></thead>
+            <tbody>
+              <tr><td><code>GET /api/rules</code></td><td>获取游戏日规则和默认时段（Mod 客户端调用）</td></tr>
+              <tr><td><code>POST /api/verify</code></td><td>实名认证并返回签名 credential</td></tr>
+              <tr><td><code>POST /api/report</code></td><td>携带 credential 上报辅助审计事件</td></tr>
+              <tr><td><code>POST /api/report/batch</code></td><td>携带 credential 批量上报辅助审计事件</td></tr>
+              <tr><td><code>GET /api/admin/*</code></td><td>管理后台 API（需管理员登录）</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── Demo 数据 ─────────────────────────────────────────────────────────────
+const DEMO_USERS = [
+  { id:1, name:'test',   id_card:'111111201001010011', created:1775443200 },
+  { id:2, name:'张小明', id_card:'320102200803150015', created:1775443500 },
+  { id:3, name:'李华',   id_card:'440106201005020042', created:1775443800 },
+  { id:4, name:'王芳',   id_card:'11010820120721002X', created:1775444100 },
+  { id:5, name:'赵雷',   id_card:'210302199903180015', created:1775444400 },
+  { id:6, name:'陈静',   id_card:'510108200502150028', created:1775444700 },
+  { id:7, name:'刘洋',   id_card:'610104200811060016', created:1775445000 },
+];
+
+const DEMO_LOGS = [
+  { ts:1775459100, user_name:'test', minor:1, action:'game_start', ip:'183.14.132.5', location:'广东 深圳'},
+  { ts:1775458800, user_name:'张小明', minor:0, action:'session_start', ip:'222.93.157.33', location:'江苏 苏州'},
+  { ts:1775458200, user_name:'李华', minor:1, action:'game_start', ip:'111.121.68.90', location:'贵州 贵阳'},
+  { ts:1775457600, user_name:'王芳', minor:1, action:'game_start', ip:'61.135.169.78', location:'北京 北京'},
+  { ts:1775457000, user_name:'赵雷', minor:0, action:'session_start', ip:'42.84.120.15', location:'辽宁 沈阳'},
+  { ts:1775366400, user_name:'陈静', minor:0, action:'game_start', ip:'118.116.240.88', location:'四川 成都'},
+  { ts:1775366100, user_name:'test', minor:1, action:'game_start', ip:'183.14.132.5', location:'广东 深圳'},
+  { ts:1775365800, user_name:'李华', minor:1, action:'game_start', ip:'111.121.68.90', location:'贵州 贵阳'},
+  { ts:1775279400, user_name:'刘洋', minor:0, action:'session_start', ip:'124.89.67.44', location:'陕西 西安'},
+  { ts:1775279100, user_name:'张小明', minor:0, action:'game_start', ip:'222.93.157.33', location:'江苏 苏州'},
+  { ts:1775191800, user_name:'test', minor:1, action:'game_start', ip:'183.14.132.5', location:'广东 深圳'},
+  { ts:1775191500, user_name:'王芳', minor:1, action:'game_start', ip:'61.135.169.78', location:'北京 北京'},
+];
+
+const DEMO_GAMEDAYS = {
+  '2026-05-01': { playable:1, is_holiday:1, is_workday_override:0, start_hour:20, end_hour:21, max_minutes:0, label:'劳动节' },
+  '2026-05-02': { playable:1, is_holiday:1, is_workday_override:0, start_hour:20, end_hour:21, max_minutes:0, label:'劳动节' },
+  '2026-05-03': { playable:1, is_holiday:1, is_workday_override:0, start_hour:20, end_hour:21, max_minutes:0, label:'劳动节' },
+  '2026-05-04': { playable:1, is_holiday:1, is_workday_override:0, start_hour:20, end_hour:21, max_minutes:0, label:'劳动节' },
+  '2026-05-05': { playable:1, is_holiday:1, is_workday_override:0, start_hour:20, end_hour:21, max_minutes:0, label:'劳动节' },
+  '2026-05-08': { playable:1, is_holiday:0, is_workday_override:0, start_hour:20, end_hour:21, max_minutes:0, label:'' },
+  '2026-05-09': { playable:0, is_holiday:0, is_workday_override:1, start_hour:20, end_hour:21, max_minutes:0, label:'劳动节后补班' },
+};
+
+let defaultStartHour = 20, defaultEndHour = 21;
+
+// ─── 工具 ──────────────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+function fmtTs(ts) { const d = new Date(ts*1000); const pad = n => String(n).padStart(2,'0'); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`; }
+function showAlert(el, msg, type='danger') { el.className = `alert alert-${type} show`; el.textContent = msg; setTimeout(() => el.classList.remove('show'), 6000); }
+
+function formatTimeInput(e) {
+  let val = e.target.value.replace(/[^\d]/g, '').slice(0, 4);
+  if (val.length >= 3) val = val.slice(0, 2) + ':' + val.slice(2);
+  else if (val.length === 2 && e.target.value.length > 2) val = val + ':';
+  e.target.value = val;
+  if (val.length === 2 && e.target.selectionStart === 2) {
+    e.target.value = val + ':';
+    setTimeout(() => { e.target.setSelectionRange(3, 3); }, 0);
+  }
+  if (val.length === 5) {
+    const next = e.target.nextElementSibling;
+    if (next && next.tagName === 'INPUT') next.focus();
+  }
+}
+
+function blurTimeInput(e) {
+  let val = e.target.value.replace(/[^\d]/g, '');
+  if (val.length === 0) { e.target.value = ''; return; }
+  if (val.length <= 2) {
+    e.target.value = val.padStart(2, '0') + ':00';
+  } else {
+    e.target.value = val.slice(0, 2) + ':' + val.slice(2, 4).padEnd(2, '0');
+  }
+}
+
+function parseTimeInput(val) {
+  const parts = (val || '0:00').split(':');
+  const h = Math.min(23, Math.max(0, parseInt(parts[0]) || 0));
+  const m = Math.min(59, Math.max(0, parseInt(parts[1]) || 0));
+  return [h, m];
+}
+
+function autoJumpYear(input, monthId) {
+  let val = input.value.replace(/[^\d]/g, '').slice(0, 2);
+  input.value = val;
+  if (val.length === 2) document.getElementById(monthId)?.focus();
+}
+
+function autoJumpMonth(input, containerId, editable) {
+  let val = input.value.replace(/[^\d]/g, '').slice(0, 2);
+  input.value = val;
+  if (val.length === 2) {
+    const yEl = document.getElementById('jumpYear_' + containerId);
+    if (!yEl || !yEl.value.trim()) {
+      yEl && yEl.focus();
+      return;
+    }
+    jumpTo(containerId, editable);
+  }
+}
+
+function blurJumpInput(input) {
+  let val = input.value.replace(/[^\d]/g, '');
+  if (val.length === 1) input.value = '0' + val;
+}
+
+function focusJumpMonth(input, containerId) {
+  const yEl = document.getElementById('jumpYear_' + containerId);
+  if (!yEl || !yEl.value.trim()) {
+    yEl && yEl.focus();
+  }
+}
+
+function jumpTo(containerId, editable) {
+  const yEl = document.getElementById('jumpYear_' + containerId);
+  const mEl = document.getElementById('jumpMonth_' + containerId);
+  if (!yEl || !mEl) return;
+  let y = parseInt(yEl.value) || 0;
+  let m = parseInt(mEl.value) || 0;
+  if (y < 1 || m < 1 || m > 12) { alert('请输入有效年月'); return; }
+  calYear = 2000 + y;
+  calMonth = m;
+  calSelectedDate = null;
+  loadCalendarData(calYear, calMonth);
+  renderCalendar(containerId, calYear, calMonth, editable);
+  if (editable) $('gamedayEdit').innerHTML = '';
+}
+
+function toast(msg, bg) {
+  let t = document.getElementById('demoToast');
+  if (!t) { t = document.createElement('div'); t.id = 'demoToast'; t.style.cssText = 'position:fixed;top:1rem;right:1rem;z-index:999;padding:.6rem 1.2rem;border-radius:6px;font-size:.85rem;color:#fff;box-shadow:0 4px 16px rgba(0,0,0,.4)'; document.body.appendChild(t); }
+  t.style.background = bg || 'var(--success)'; t.style.display = 'block'; t.textContent = msg;
+  setTimeout(() => t.style.display = 'none', 3000);
+}
+
+// ─── 导航 ──────────────────────────────────────────────────────────────────────
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  $('page-' + name).classList.add('active');
+  document.querySelector(`[data-page="${name}"]`).classList.add('active');
+}
+
+// ─── 仪表盘 ────────────────────────────────────────────────────────────────────
+function loadDashboard() {
+  const now = new Date();
+  const year = now.getFullYear(), month = now.getMonth() + 1;
+  const todayD = now.getDate();
+  const dow = now.getDay();
+  const todayKey = String(todayD).padStart(2,'0');
+
+  const todayInfo = calData[todayKey];
+  let playableHtml;
+  if (todayInfo) {
+    playableHtml = todayInfo.playable === 1
+      ? '<span style="color:#22c55e;font-size:1.3rem">可玩</span>'
+      : '<span style="color:#ef4444;font-size:1.3rem">不可玩</span>';
+  } else {
+    const dp = dow === 0 || dow === 5 || dow === 6;
+    playableHtml = dp
+      ? '<span style="color:#22c55e;font-size:1.3rem">可玩</span><div style="font-size:.7rem;color:var(--muted)">(默认规则)</div>'
+      : '<span style="color:#ef4444;font-size:1.3rem">不可玩</span>';
+  }
+
+  let remaining = 0;
+  for (let d = todayD; d <= new Date(year, month, 0).getDate(); d++) {
+    const key = String(d).padStart(2,'0');
+    const info = calData[key];
+    if (info) { if (info.playable === 1) remaining++; }
+    else { const dd = new Date(year, month-1, d).getDay(); if (dd===0||dd===5||dd===6) remaining++; }
+  }
+
+  $('statGrid').innerHTML = [
+    { val:playableHtml,             label:'今日状态' },
+    { val:remaining+' 天',          label:'本月剩余可玩日' },
+    { val:DEMO_USERS.length,        label:'认证用户数' },
+    { val:DEMO_LOGS.length,         label:'日志记录总数' },
+    { val:DEMO_LOGS.filter(l=>l.minor).length, label:'未成年登录次数' }
+  ].map(s => `<div class="stat-card"><div class="stat-value">${s.val}</div><div class="stat-label">${s.label}</div></div>`).join('');
+
+  $('recentLogs').innerHTML = DEMO_LOGS.slice(0,10).map(r => `
+    <tr>
+      <td>${fmtTs(r.ts)}</td><td>${r.user_name}</td>
+      <td>${r.minor ? '<span class="badge badge-yellow">未成年</span>' : '<span class="badge badge-green">成年</span>'}</td>
+      <td>${r.action}</td>
+      <td style="font-family:monospace;font-size:.8rem">${r.ip}</td>
+      <td style="font-size:.8rem;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.location}">${r.location}</td>
+    </tr>`).join('');
+
+  loadDashboardCalendar();
+}
+
+// ─── 日历组件 ───────────────────────────────────────────────────────────────────
+let calYear, calMonth, calData = {}, calSelectedDate = null;
+
+function loadCalendarData(year, month) {
+  calData = {};
+  for (let d = 1; d <= new Date(year, month, 0).getDate(); d++) {
+    const ds = `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    if (DEMO_GAMEDAYS[ds]) calData[String(d).padStart(2,'0')] = DEMO_GAMEDAYS[ds];
+  }
+}
+
+function renderCalendar(containerId, year, month, editable) {
+  calYear = year; calMonth = month;
+  const container = $(containerId);
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+  const firstDay = new Date(year, month - 1, 1);
+  const lastDay = new Date(year, month, 0);
+  const startDow = firstDay.getDay();
+
+  let html = `<div class="calendar-wrap"><div class="cal-header">
+    <button class="cal-nav" onclick="navigateCal('${containerId}',-1,${editable})">◀</button>
+    <span class="cal-title">${year}年${month}月</span>
+    <button class="cal-nav" onclick="navigateCal('${containerId}',1,${editable})">▶</button>
+    <button class="cal-nav" onclick="jumpToToday('${containerId}',${editable})" style="font-size:.75rem">今天</button>
+    <span class="cal-jump">
+      <input id="jumpYear_${containerId}" type="text" placeholder="--" maxlength="2" autocomplete="off" name="jy_${containerId}" style="width:36px;text-align:center;padding:.35rem .3rem;font-size:.85rem;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:6px" oninput="autoJumpYear(this,'jumpMonth_${containerId}')" onblur="blurJumpInput(this)">
+      <span style="color:var(--muted);font-size:.75rem">年</span>
+      <input id="jumpMonth_${containerId}" type="text" placeholder="--" maxlength="2" autocomplete="off" name="jm_${containerId}" style="width:30px;text-align:center;padding:.35rem .3rem;font-size:.85rem;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:6px" oninput="autoJumpMonth(this,'${containerId}',${editable})" onblur="blurJumpInput(this)" onfocus="focusJumpMonth(this,'${containerId}')">
+      <span style="color:var(--muted);font-size:.75rem">月</span>
+      <button class="cal-nav" onclick="jumpTo('${containerId}',${editable})" style="font-size:.7rem;padding:.2rem .4rem">跳转</button>
+    </span>
+  </div>`;
+  html += '<div class="cal-grid">';
+  ['日','一','二','三','四','五','六'].forEach(d => html += `<div class="cal-day-header">${d}</div>`);
+  for (let i = 0; i < startDow; i++) html += '<div class="cal-day empty"></div>';
+
+  for (let d = 1; d <= lastDay.getDate(); d++) {
+    const dateStr = `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const info = calData[String(d).padStart(2,'0')];
+    const isToday = dateStr === todayStr;
+    const isSelected = dateStr === calSelectedDate;
+    const isPlayable = info ? info.playable === 1 : false;
+    const isWorkdayOverride = info ? info.is_workday_override === 1 : false;
+    let classes = 'cal-day';
+    if (isToday) classes += ' today';
+    if (isSelected) classes += ' selected';
+    const hasInfo = !!info;
+    const isDefaultPlayable = !hasInfo && [0,5,6].includes(new Date(dateStr).getDay());
+    let dotHtml = '';
+    if (isWorkdayOverride) dotHtml = '<div class="cal-dot red"></div>';
+    else if (isPlayable || isDefaultPlayable) dotHtml = '<div class="cal-dot green"></div>';
+    const onclick = editable ? `onclick="selectGameDay('${dateStr}')"` : '';
+    html += `<div class="${classes}" ${onclick}>${d}${dotHtml}</div>`;
+  }
+  html += '</div></div>';
+  container.innerHTML = html;
+}
+
+function jumpToToday(containerId, editable) {
+  const now = new Date();
+  calYear = now.getFullYear(); calMonth = now.getMonth() + 1;
+  calSelectedDate = null;
+  loadCalendarData(calYear, calMonth);
+  renderCalendar(containerId, calYear, calMonth, editable);
+  if (editable) $('gamedayEdit').innerHTML = '';
+}
+function navigateCal(containerId, delta, editable) {
+  calMonth += delta;
+  if (calMonth < 1) { calMonth = 12; calYear--; }
+  if (calMonth > 12) { calMonth = 1; calYear++; }
+  calSelectedDate = null;
+  loadCalendarData(calYear, calMonth);
+  renderCalendar(containerId, calYear, calMonth, editable);
+  if (editable) $('gamedayEdit').innerHTML = '';
+}
+
+// ─── 游戏日管理 ─────────────────────────────────────────────────────────────────
+function loadGameDayCalendar() {
+  const now = new Date();
+  calYear = now.getFullYear(); calMonth = now.getMonth() + 1;
+  loadCalendarData(calYear, calMonth);
+  renderCalendar('gamedayCalendar', calYear, calMonth, true);
+  const todayStr = `${calYear}-${String(calMonth).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+  selectGameDay(todayStr);
+}
+function loadDashboardCalendar() {
+  const now = new Date();
+  const year = now.getFullYear(), month = now.getMonth() + 1;
+  loadCalendarData(year, month);
+  renderCalendar('dashboardCalendar', year, month, false);
+}
+
+function selectGameDay(dateStr) {
+  calSelectedDate = dateStr;
+  renderCalendar('gamedayCalendar', calYear, calMonth, true);
+
+  const dKey = dateStr.slice(8,10);
+  const info = DEMO_GAMEDAYS[dateStr] || calData[dKey];
+  const hasInfo = !!info;
+  const dow = new Date(dateStr).getDay();
+  const defaultPlayable = dow === 0 || dow === 5 || dow === 6;
+  const playable = hasInfo ? info.playable !== 0 : defaultPlayable;
+  const startH = info && info.start_hour != null ? info.start_hour : defaultStartHour;
+  const startM = info && info.start_minute != null ? info.start_minute : 0;
+  const endH   = info && info.end_hour   != null ? info.end_hour   : defaultEndHour;
+  const endM   = info && info.end_minute != null ? info.end_minute : 0;
+  const maxMin  = info && info.max_minutes || 0;
+  const label   = info && info.label || '';
+  const isHoliday = info && info.is_holiday === 1;
+  const isOverride = info && info.is_workday_override === 1;
+
+  let statusBadge = playable
+    ? '<span class="badge badge-green">可玩日</span>'
+    : '<span class="badge badge-red">非玩日</span>';
+  if (isHoliday) statusBadge += ' <span class="badge badge-yellow">法定假日</span>';
+  if (isOverride) statusBadge += ' <span class="badge badge-gray">调休上班</span>';
+
+  $('gamedayEdit').innerHTML = `
+    <div class="card-title" style="margin-bottom:.7rem">${dateStr} ${statusBadge}</div>
+    <div id="gdAlert" class="alert"></div>
+    <div class="form-group" style="margin-bottom:.5rem">
+      <label>是否可玩</label>
+      <select id="gdPlayable">
+        <option value="1" ${playable?'selected':''}>可玩</option>
+        <option value="0" ${!playable?'selected':''}>不可玩</option>
+      </select>
+    </div>
+    <div class="form-row" style="margin-bottom:.5rem">
+      <div class="form-group"><label>开始时间</label><input id="gdStart" type="text" placeholder="HH:MM" maxlength="5" value="${String(startH).padStart(2,'0')}:${String(startM).padStart(2,'0')}" oninput="formatTimeInput(event)" onblur="blurTimeInput(event)" style="width:80px;text-align:center" autocomplete="off"></div>
+      <div class="form-group"><label>结束时间</label><input id="gdEnd" type="text" placeholder="HH:MM" maxlength="5" value="${String(endH).padStart(2,'0')}:${String(endM).padStart(2,'0')}" oninput="formatTimeInput(event)" onblur="blurTimeInput(event)" style="width:80px;text-align:center" autocomplete="off"></div>
+    </div>
+    <div class="form-group" style="margin-bottom:.5rem">
+      <label>限时(分钟) <span style="font-size:.75rem;color:var(--muted)">0=不限</span></label>
+      <input id="gdMaxMin" type="number" min="0" max="1440" value="${maxMin}">
+    </div>
+    <div class="form-group" style="margin-bottom:.8rem">
+      <label>备注</label>
+      <input id="gdLabel" type="text" value="${label.replace(/"/g,'&quot;')}" placeholder="如：暑假延长">
+    </div>
+    <button class="btn btn-primary" onclick="saveGameDay('${dateStr}')">保存</button>
+  `;
+}
+
+function batchSetTime() {
+  const [sh, sm] = parseTimeInput($('batchStart').value);
+  const [eh, em] = parseTimeInput($('batchEnd').value);
+  if (sh > eh || (sh === eh && sm >= em)) { showAlert($('batchAlert'), '开始时间必须小于结束时间'); return; }
+  defaultStartHour = sh; defaultEndHour = eh;
+  showAlert($('batchAlert'), `演示：默认游玩时段已更新为 ${String(sh).padStart(2,'0')}:${String(sm).padStart(2,'0')} - ${String(eh).padStart(2,'0')}:${String(em).padStart(2,'0')}`, 'success');
+  loadGameDayCalendar(); loadDashboardCalendar();
+}
+
+function saveGameDay(dateStr) {
+  const playable = parseInt($('gdPlayable').value);
+  const [start_hour, start_minute] = parseTimeInput($('gdStart').value);
+  const [end_hour, end_minute] = parseTimeInput($('gdEnd').value);
+  const max_minutes = parseInt($('gdMaxMin').value) || 0;
+  const label = $('gdLabel').value.trim();
+  if (start_hour > end_hour || (start_hour === end_hour && start_minute >= end_minute)) { showAlert($('gdAlert'), '开始时间必须小于结束时间'); return; }
+  DEMO_GAMEDAYS[dateStr] = { playable: !!playable ? 1 : 0, is_holiday: DEMO_GAMEDAYS[dateStr]?.is_holiday || 0, is_workday_override: !playable ? 1 : 0, start_hour, start_minute, end_hour, end_minute, max_minutes, label };
+  showAlert($('gdAlert'), `演示：${dateStr} 已保存`, 'success');
+  loadCalendarData(calYear, calMonth);
+  renderCalendar('gamedayCalendar', calYear, calMonth, true);
+  loadDashboard();
+}
+
+// ─── 用户管理 ──────────────────────────────────────────────────────────────────
+function maskDemoIdCard(idCard) {
+  const normalized = String(idCard || '').trim().toUpperCase();
+  if (normalized.length < 10) return '';
+  return `${normalized.slice(0, 6)}********${normalized.slice(-4)}`;
+}
+
+function ageFromDemoIdCard(idCard) {
+  const normalized = String(idCard || '').trim().toUpperCase();
+  if (!/^\d{17}[\dX]$/.test(normalized)) return null;
+  const birth = normalized.substring(6, 14);
+  const year = parseInt(birth.substring(0, 4), 10);
+  const month = parseInt(birth.substring(4, 6), 10);
+  const day = parseInt(birth.substring(6, 8), 10);
+  const now = new Date();
+  let age = now.getFullYear() - year;
+  const currentMonth = now.getMonth() + 1;
+  if (currentMonth < month || (currentMonth === month && now.getDate() < day)) age--;
+  return age;
+}
+
+function loadUsers() {
+  $('userList').innerHTML = DEMO_USERS.map(u => {
+    const age = ageFromDemoIdCard(u.id_card);
+    const type = age == null
+      ? '<span style="color:var(--muted)">未知</span>'
+      : (age < 18 ? '<span style="color:var(--warning)">未成年</span>' : '<span style="color:var(--success)">成年</span>');
+    return `<tr>
+      <td>${u.id}</td><td>${u.name}</td><td style="font-family:monospace">${maskDemoIdCard(u.id_card)}</td>
+      <td>${age == null ? '未知' : age + ' 岁'}</td><td>${type}</td><td>${fmtTs(u.created)}</td>
+      <td><button class="btn btn-sm btn-danger" onclick="deleteUser(${u.id})">删除</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function addUser() {
+  const name = $('uName').value.trim();
+  const id_card = $('uIdCard').value.trim();
+  if (!name)   { showAlert($('userAlert'), '请输入姓名'); return; }
+  if (id_card.length !== 18) { showAlert($('userAlert'), '身份证号须为18位'); return; }
+  const id = DEMO_USERS.length + 1;
+  DEMO_USERS.push({ id, name, id_card, created: Math.floor(Date.now()/1000) });
+  showAlert($('userAlert'), `演示：${name} 已添加`, 'success');
+  $('uName').value = ''; $('uIdCard').value = '';
+  loadUsers();
+}
+
+function deleteUser(id) {
+  const idx = DEMO_USERS.findIndex(u => u.id === id);
+  if (idx >= 0) { const n = DEMO_USERS[idx].name; DEMO_USERS.splice(idx, 1); loadUsers(); toast(`✅ 演示：已删除 ${n}`, 'var(--danger)'); }
+}
+
+// ─── 日志 ──────────────────────────────────────────────────────────────────────
+function loadLogs() {
+  $('logList').innerHTML = DEMO_LOGS.map(r => `
+    <tr>
+      <td>${fmtTs(r.ts)}</td><td>${r.user_name}</td>
+      <td>${r.minor ? '<span class="badge badge-yellow">未成年</span>' : '<span class="badge badge-green">成年</span>'}</td>
+      <td>${r.action}</td>
+      <td style="font-family:monospace;font-size:.8rem">${r.ip}</td>
+      <td style="font-size:.8rem;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.location}">${r.location}</td>
+    </tr>`).join('');
+}
+
+function copyConfig() {
+  const text = $('modConfigText').innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.querySelector('#modConfigText + button');
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<svg class="btn-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>';
+    setTimeout(() => { btn.innerHTML = orig; }, 2000);
+    toast('✅ 配置已复制到剪贴板', 'var(--success)');
+  }).catch(() => toast('❌ 复制失败', 'var(--danger)'));
+}
+function copyFullConfig() { copyConfig(); }
+
+// ─── 初始化 ────────────────────────────────────────────────────────────────────
+showPage('dashboard');
+loadDashboard();
+loadGameDayCalendar();
+loadUsers();
+loadLogs();
+</script>
+</body>
+</html>

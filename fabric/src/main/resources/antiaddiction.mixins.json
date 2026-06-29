@@ -1,0 +1,19 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.antiaddiction.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [],
+  "client": [
+    "MixinTitleScreen",
+    "MixinScreen",
+    "MixinConnectScreen",
+    "MixinInGameHud",
+    "MixinMusicTracker",
+    "MixinLevelStorage",
+    "MixinLevelStorageSession"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

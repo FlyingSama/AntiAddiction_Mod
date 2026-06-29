@@ -1,0 +1,35 @@
+name: Build Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Build Fabric
+        working-directory: fabric
+        run: chmod +x gradlew && ./gradlew build --no-daemon
+
+      - name: Build NeoForge
+        working-directory: neoforge
+        run: chmod +x gradlew && ./gradlew build --no-daemon
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            fabric/build/libs/antiaddiction-fabric-*.jar
+            neoforge/build/libs/antiaddiction-neoforge-*.jar
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

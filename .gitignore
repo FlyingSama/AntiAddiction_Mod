@@ -1,0 +1,47 @@
+# Gradle
+fabric/build/
+fabric/.gradle/
+fabric/.idea/
+neoforge/build/
+neoforge/.gradle/
+neoforge/.idea/
+
+# Node.js
+backend/node_modules/
+backend/package-lock.json
+
+# IDE
+*.iml
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Database (含敏感数据)
+backend/antiaddiction.db
+backend/antiaddiction.db-shm
+backend/antiaddiction.db-wal
+
+# Session
+backend/sessions/
+
+# Logs
+*.log
+backend/logs/
+
+# Dev artifacts
+build/
+out/
+.superpowers/
+docs/superpowers/
+backend/fix_location.js
+
+# Versioned NeoForge module folders
+neoforge-26.1.2/build/
+neoforge-26.1.2/.gradle/
+neoforge-26.1.2/.idea/
+neoforge-1.21.11/build/
+neoforge-1.21.11/.gradle/
+neoforge-1.21.11/.idea/

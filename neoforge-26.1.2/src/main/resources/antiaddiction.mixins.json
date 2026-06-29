@@ -1,0 +1,16 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.antiaddiction.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "mixins": [],
+  "client": [
+    "MixinTitleScreen",
+    "MixinConnectScreen",
+    "MixinLevelStorageSource",
+    "MixinLevelStorageAccess"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
