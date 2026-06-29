@@ -45,3 +45,6 @@ neoforge-26.1.2/.idea/
 neoforge-1.21.11/build/
 neoforge-1.21.11/.gradle/
 neoforge-1.21.11/.idea/
+
+# Generated run configs (NeoGradle/MDG)
+runs/
